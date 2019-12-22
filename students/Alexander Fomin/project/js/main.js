@@ -7,65 +7,38 @@ const ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const API = 'https://raw.githubusercontent.com/alexferdinand/js-2-08_21.11/master/students/Alexander Fomin/project'
 const urlCatalog = '/catalog.json'
+let list = []
+let catalog
+
 
 
 //глобальные сущности корзины и каталога (ИМИТАЦИЯ! НЕЛЬЗЯ ТАК ДЕЛАТЬ!)
-
-class List {
-    constructor() {
-        this.list = null
-        this._init()
-    }
-
-
-    _init() {
-        this.list = this.getProductList()
-    }
-
-    _getXHR() {
-        let xhr
-        try {
-            xhr = new ActiveXObject("Msxml2.XMLHTTP");
-        } catch (e) {
-            try {
-                xhr = new ActiveXObject("Microsoft.XMLHTTP");
-            } catch (E) {
-                xhr = false;
+function makeGETrequest() {
+    return new Promise((resolve, reject) => {
+        xhr = new XMLHttpRequest()
+        xhr.onload = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status == 200)
+                    resolve(xhr.response)
+            } else {
+                reject(xhr.status)
             }
         }
-        if (typeof XMLHttpRequest != 'undefined') {
-            xhr = new XMLHttpRequest();
-        }
-        return xhr
-    }
-
-    makeGETrequest() {
-       return new Promise((resolve, reject) => {
-            let xhr = this._getXHR()
-            xhr.onload = function () {
-                if (xhr.readyState === 4) {
-                    if (xhr.status == 200)
-                        resolve(xhr.responseText)
-                } else {
-                    reject(xhr.status)
-                }
-            }
-            xhr.open('GET', API + urlCatalog, true)
-            xhr.send()
-        })
-    }
-
-    getProductList() {
-        this.makeGETrequest()
-            .then(responseText => {
-                return responseText
-            })
-            .catch(error => {
-                return 'Ошибка'
-            })
-
-    }
+        xhr.open('GET', API + urlCatalog, true)
+        xhr.send()
+    })
 }
+
+function createCatalog() {
+    let promise = makeGETrequest()
+     promise.then(function (response) {
+         list = JSON.parse(response).slice()
+        })
+        .then(function (res) {
+            catalog = new Catalog
+        })
+}
+
 
 class Catalog {
     constructor() {
@@ -74,7 +47,9 @@ class Catalog {
         this._init()
     }
     _init() {
-
+        list.forEach(el => {
+            this.products.push(new Product(el))
+        })
         this.render()
     }
 
@@ -170,12 +145,12 @@ class Cart {
 
     removeItem(productDataset) {
         let find = this.elements.find(element => element.id === productDataset['id']);
-        console.log(this.elements)
+        //console.log(this.elements)
         let indexOfEl = this.elements.indexOf(find)
         if (+find.count == 1) {
             this.elements.splice(indexOfEl, 1);
             document.querySelector(`.cart-item[data-id="${find['id']}"]`).remove()
-            console.log(this.elements)
+            //console.log(this.elements)
         } else {
             this.elements[indexOfEl].count--
             this._render()
@@ -225,10 +200,8 @@ class CartItem {
 }
 
 
-let a = new List()
 
-console.log(a)
-let catalog = new Catalog()
+createCatalog()
 let cart = new Cart()
 
 
